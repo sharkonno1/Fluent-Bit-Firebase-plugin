@@ -3,6 +3,7 @@ package main
 import "github.com/fluent/fluent-bit-go/output"
 import (
 	"bufio"
+	"strings"
 	"bytes"
 	"fmt"
 	"unsafe"
@@ -81,10 +82,15 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 			fmt.Fprintf(buffer,"\"%s\": %s",k,v)
 		}
 		buffer.Flush()
-		 postsRef.Push(ctx, &Post{
-			Time: timestamp.String(),
-		    State: buf.String(),
+		s := buf.String()
+		p := strings.Split(s,",")
+		for j := range p {
+			p[j] = strings.TrimPrefix(p[j],"\"exec\": ")
+			postsRef.Push(ctx, &Post{
+				Time: timestamp.String(),
+				State: p[j],
 			});
+		}
 		count++
 	}
 	return output.FLB_OK
